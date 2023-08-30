@@ -3,6 +3,7 @@ import json
 import os
 import time
 from web3 import Web3
+import threading
 
 
 ### ============方法定义 start =============
@@ -59,7 +60,33 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_batch_bless
   keys = json.load(file)
 
 # 遍历所有账号，挨个祈福
-for key in keys:
-  start(key)
+# for key in keys:
+#   start(key)
+
+
+# 多线程遍历所有账号，挨个祈福
+def process_keys(keys):
+    for key in keys:
+        start(key)
+        
+# 计算每个线程要处理的 keys 列表 max_threads为最大线程数量
+max_threads = 5
+keys_per_thread = len(keys) // max_threads
+thread_list = []
+
+# 创建并启动线程
+for i in range(max_threads):
+    start_index = i * keys_per_thread
+    end_index = start_index + keys_per_thread if i < max_threads - 1 else len(keys)
+    thread_keys = keys[start_index:end_index]
+    thread = threading.Thread(target=process_keys, args=(thread_keys,))
+    thread_list.append(thread)
+    thread.start()
+    print(i)
+
+# 等待所有线程完成
+for thread in thread_list:
+    thread.join()
+print("All blessing have finished.")
 
 ### ============脚本执行 end =============
